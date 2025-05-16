@@ -1,0 +1,7 @@
+base   mcp
+author Andreas Gohr
+email  andi@splitbrain.org
+date   2025-05-16
+name   mcp plugin
+desc   Make the remote API available as MCP server
+url    https://www.dokuwiki.org/plugin:mcp
