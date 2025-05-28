@@ -21,6 +21,6 @@ try {
     $result = $server->returnError($e);
 }
 
-$result = json_encode($result, JSON_THROW_ON_ERROR);
+$result = json_encode($result, JSON_THROW_ON_ERROR|JSON_PRETTY_PRINT);
 Logger::debug('MCP Response', $result);
 echo $result;

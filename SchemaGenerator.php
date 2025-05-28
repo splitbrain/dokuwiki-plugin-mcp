@@ -26,7 +26,7 @@ class SchemaGenerator extends OpenAPIGenerator
         $nullSchema = [
             "type" => "object",
             "properties" => (object)[],
-            "required" => (object)[]
+            "required" => []
         ];
 
         foreach ($methods as $method => $call) {
