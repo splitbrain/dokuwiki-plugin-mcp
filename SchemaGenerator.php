@@ -32,6 +32,7 @@ class SchemaGenerator extends OpenAPIGenerator
         foreach ($methods as $method => $call) {
             $args = $call->getArgs();
 
+            // Some LLMs (e.g. Claude) don't allow underscores in method names, so we replace them with dots.
             $tools[] = [
                 'name' => str_replace('.', '_', $method),
                 'description' => $call->getDescription(),
