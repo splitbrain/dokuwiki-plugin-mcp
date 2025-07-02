@@ -33,7 +33,7 @@ class SchemaGenerator extends OpenAPIGenerator
             $args = $call->getArgs();
 
             $tools[] = [
-                'name' => $method,
+                'name' => str_replace('.', '_', $method),
                 'description' => $call->getDescription(),
                 'inputSchema' => $args ? $this->getMethodArguments($args)['schema'] : $nullSchema
             ];
