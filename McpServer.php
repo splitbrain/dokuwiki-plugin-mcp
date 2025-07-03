@@ -82,7 +82,9 @@ class McpServer extends JsonRpcServer
      */
     protected function mcpToolsCall($args)
     {
-        $method = $args['name'];
+        // Some LLMs (e.g. Claude) don't allow underscores in method names, so we replace them with dots.
+        // We have to convert them back to underscores for the actual call.
+        $method = str_replace('_', '.', $args['name']);
         $params = $args['arguments'];
         $result = parent::call($method, $params);
 
