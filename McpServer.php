@@ -86,7 +86,23 @@ class McpServer extends JsonRpcServer
         // We have to convert them back to underscores for the actual call.
         $method = str_replace('_', '.', $args['name']);
         $params = $args['arguments'];
-        $result = parent::call($method, $params);
+
+        try {
+            $result = parent::call($method, $params);
+        } catch (\Exception $e) {
+            // Return tool errors as MCP-level errors (isError: true), not as
+            // JSON-RPC protocol errors. A failing tool is normal operation;
+            // a JSON-RPC error signals a broken connection to the client.
+            return [
+                "content" => [
+                    [
+                        "type" => "text",
+                        "text" => $e->getMessage()
+                    ]
+                ],
+                "isError" => true,
+            ];
+        }
 
         # MCP only supports Text, Image and Audio. Complex types will be returned as JSON.
         // FIXME: we could support image and audio in the core.getMedia call
