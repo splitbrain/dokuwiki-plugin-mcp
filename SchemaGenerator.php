@@ -13,6 +13,14 @@ use dokuwiki\Remote\OpenApiDoc\OpenAPIGenerator;
 class SchemaGenerator extends OpenAPIGenerator
 {
     /**
+     * Category marking the deprecated legacy XML-RPC API methods. Tools for these
+     * are not exposed because the modern core.* methods supersede them.
+     *
+     * @var string
+     */
+    protected const LEGACY_CATEGORY = 'legacy';
+
+    /**
      * Method names (without their category prefix) that only read data and never
      * modify the wiki. Their tools are annotated as read-only so clients may run
      * them without asking the user for confirmation.
@@ -59,6 +67,9 @@ class SchemaGenerator extends OpenAPIGenerator
         ];
 
         foreach ($methods as $method => $call) {
+            // skip the deprecated legacy XML-RPC API; the modern core.* methods replace it
+            if ($call->getCategory() === self::LEGACY_CATEGORY) continue;
+
             $args = $call->getArgs();
 
             // Some LLMs (e.g. Claude) don't allow underscores in method names, so we replace them with dots.
