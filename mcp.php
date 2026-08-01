@@ -11,12 +11,16 @@ session_write_close();  //close session
 
 header('Content-Type: application/json');
 
-Logger::debug('MCP Request', file_get_contents('php://input'));
-
 $server = new McpServer();
+
+Logger::debug('MCP Request', [
+    'auth' => $server->authStatus(),
+    'body' => file_get_contents('php://input'),
+]);
+
 try {
     $result = $server->serve();
-} catch (\Exception $e) {
+} catch (\Throwable $e) {
     ErrorHandler::logException($e);
     $result = $server->returnError($e);
 }
