@@ -13,8 +13,8 @@ use dokuwiki\Remote\RemoteException;
  */
 class McpServer extends JsonRpcServer
 {
-    /** @var mixed The id of the current request, kept to correlate error responses with it */
-    protected $requestId;
+    /** @var string|int|null The id of the current request, kept to correlate error responses with it */
+    protected $requestId = null;
 
     /** @inheritdoc */
     public function call($methodname, $args)
@@ -27,26 +27,34 @@ class McpServer extends JsonRpcServer
             case 'tools/call':
                 return $this->mcpToolsCall($args);
             case 'ping':
-            case 'notifications/initialized':
-            case 'notifications/cancelled':
-                return $this->mcpNOP($args);
+                return $this->mcpNOP();
             default:
                 return parent::call($methodname, $args);
         }
     }
 
-    /** @inheritdoc */
+    /**
+     * @inheritdoc
+     * @return array|null The response, null when the request was a notification
+     * @throws RemoteException when a request comes without an id
+     */
     protected function createResponse($data)
     {
-        $this->requestId = $data['id'] ?? null;
+        if (str_starts_with($data['method'] ?? '', 'notifications/')) return null;
+
+        if (!isset($data['id'])) {
+            throw new RemoteException('Only a notification may omit the id', -32600);
+        }
+
+        $this->requestId = $data['id'];
         return parent::createResponse($data);
     }
 
     /**
      * Create an error response
      *
-     * Every error is correlated with the request it belongs to, so clients are able to report
-     * it. An access error only ever gets here when nobody is authenticated, because a tool call
+     * Every error is correlated with the request it belongs to (if possible)
+     * An access error only ever gets here when nobody is authenticated, because a tool call
      * handles a denied user itself, so it explains the state and challenges the client.
      *
      * @param \Throwable $exception
@@ -65,11 +73,14 @@ class McpServer extends JsonRpcServer
                 $exception->getCode() ?: -32604,
                 $exception
             );
+        } elseif (http_response_code() === 200) {
+            http_status($exception instanceof RemoteException ? 400 : 500);
         }
 
         $return = parent::returnError($exception);
         $return['jsonrpc'] = '2.0';
-        $return['id'] = $this->requestId;
+        // MCP spec says omit ID when not available (JSON-RPC would set it to null)
+        if ($this->requestId !== null) $return['id'] = $this->requestId;
         return $return;
     }
 
@@ -176,7 +187,10 @@ class McpServer extends JsonRpcServer
     }
 
     /**
-     * Handle the MCP calls that only need to be acknowledged, but do not require any response.
+     * Handle an MCP call that has no data to return
+     *
+     * The empty object is what such a call is defined to result in. It has to be an object,
+     * because an empty array would be encoded as a JSON list.
      *
      * @return object
      */
